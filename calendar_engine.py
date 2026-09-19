@@ -74,9 +74,9 @@ def seed_demo(path: Path) -> None:
 
 def to_ics(items: list[Assignment]) -> bytes:
     def esc(v: str): return v.replace("\\","\\\\").replace(";","\\;").replace(",","\\,").replace("\n","\\n")
-    out=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//StudyFlow//EN","CALSCALE:GREGORIAN"]
+    out=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Semester Calendar//EN","CALSCALE:GREGORIAN"]
     for x in items:
-        out += ["BEGIN:VEVENT",f"UID:{x.id}@studyflow",f"SUMMARY:{esc(x.course+': '+x.title)}"]
+        out += ["BEGIN:VEVENT",f"UID:{x.id}@semestercalendar",f"SUMMARY:{esc(x.course+': '+x.title)}"]
         if x.due_time:
             stamp=x.due_date.replace("-","")+"T"+x.due_time.replace(":","")+"00"; out += [f"DTSTART:{stamp}",f"DTEND:{stamp}"]
         else:

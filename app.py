@@ -6,19 +6,56 @@ import streamlit as st
 from calendar_engine import MONTH_NAMES, Assignment, create_assignment, delete_assignment, list_assignments, list_syllabi, month_weeks, save_assignment, save_syllabus, seed_demo, to_ics, update_assignment
 
 YEAR=2026; ROOT=Path(__file__).parent; DB_FILE=ROOT/"data"/"school_calendar.db"
-COLORS={"Assignment":"#5b7cfa","Exam":"#e25b65","Reading":"#8d65d6","Project":"#e49a3a","Quiz":"#26a77a","Other":"#6f7a89"}
-st.set_page_config(page_title="StudyFlow 2026",page_icon="📚",layout="wide",initial_sidebar_state="collapsed")
+COLORS={"Assignment":"#5b7cfa","Reminder":"#7b61ff","Event":"#2aa6a6","Exam":"#e25b65","Quiz":"#26a77a","Reading":"#8d65d6","Project":"#e49a3a","Other":"#6f7a89"}
+st.set_page_config(page_title="Semester Calendar",page_icon="📚",layout="wide",initial_sidebar_state="collapsed")
 st.markdown("""<style>
 :root{--ink:#172033;--muted:#6d7585;--line:#e8eaf0}.stApp{background:linear-gradient(150deg,#f8f9fc,#fff 42%,#f7f8fc);color:var(--ink)}
 .block-container{max-width:1480px;padding-top:1.25rem;padding-bottom:5rem}[data-testid="stMetric"]{background:#fff;border:1px solid var(--line);padding:13px 15px;border-radius:16px;box-shadow:0 8px 25px #1f2a440a}
 .hero{padding:9px 0 18px}.eyebrow{letter-spacing:.13em;text-transform:uppercase;font-size:.72rem;font-weight:800;color:#5b7cfa}.hero h1{font-size:clamp(2rem,5vw,3.8rem);line-height:1;margin:.3rem 0 .65rem;letter-spacing:-.045em}.hero p{color:var(--muted);font-size:1.03rem;margin:0}
+.create-bar{display:flex;align-items:center;gap:1rem;margin:0 0 1rem}.create-toggle{background:linear-gradient(135deg,#5b7cfa,#7b61ff);color:#fff;border:none;border-radius:14px;padding:.8rem 1.2rem;font-weight:800;box-shadow:0 12px 26px #5b7cfa4d}.create-panel{background:#fff;border:1px solid #e8eaf0;border-radius:18px;padding:1rem 1rem 0.5rem;box-shadow:0 14px 30px #1f2a440a;margin:.5rem 0 1.1rem}
 .week-head{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;text-align:center;color:var(--muted);font-weight:800}.day{min-height:145px;border:1px solid var(--line);border-radius:14px;padding:9px;background:#fff;margin-bottom:9px;box-shadow:0 4px 12px #1f2a4406}.day.out{background:#f8f9fb;color:#adb2bc}.day.today{border:2px solid #5b7cfa}.num{font-weight:800;font-size:.82rem;margin-bottom:7px}.chip{font-size:.72rem;line-height:1.25;color:#fff;border-radius:7px;padding:5px 6px;margin:4px 0;overflow:hidden}.chip.done{opacity:.45;text-decoration:line-through}
 .agenda{background:#fff;border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:14px;padding:13px 14px;margin:8px 0;display:flex;gap:12px}.agenda-date{min-width:52px;text-align:center;color:var(--muted);font-size:.72rem;text-transform:uppercase}.agenda-date b{display:block;color:var(--ink);font-size:1.35rem}.agenda-body{flex:1}.agenda-title{font-weight:800}.agenda-meta{color:var(--muted);font-size:.82rem;margin-top:3px}.empty{padding:35px;border:1px dashed #cfd4df;border-radius:16px;text-align:center;color:var(--muted);background:#fff}
 @media(max-width:720px){.block-container{padding:.8rem .75rem 4rem}.hero h1{font-size:2.25rem}.day{min-height:80px;padding:4px}.chip{font-size:.6rem;padding:3px}.agenda{padding:11px}.stTabs [data-baseweb="tab"]{padding-left:10px;padding-right:10px}}
 </style>""",unsafe_allow_html=True)
 
 seed_demo(DB_FILE); items=list_assignments(DB_FILE); today=date.today()
-st.markdown('<div class="hero"><div class="eyebrow">Your semester at a glance</div><h1>StudyFlow <span style="color:#5b7cfa">2026</span></h1><p>One clear place for every deadline, exam, reading, and project.</p></div>',unsafe_allow_html=True)
+if "show_create" not in st.session_state: st.session_state.show_create=False
+st.markdown('<div class="hero"><div class="eyebrow">Your semester at a glance</div><h1>Semester Calendar <span style="color:#5b7cfa">2026</span></h1><p>One clear place for every deadline, exam, reading, and project.</p></div>',unsafe_allow_html=True)
+create_col, helper_col=st.columns([1.2,5])
+with create_col:
+    if st.button("＋ Create", type="primary", use_container_width=True):
+        st.session_state.show_create = not st.session_state.show_create
+with helper_col:
+    st.caption("Create an assignment, reminder, event, exam, or quiz in seconds.")
+if st.session_state.show_create:
+    st.markdown('<div class="create-panel">',unsafe_allow_html=True)
+    with st.form("quick_create", clear_on_submit=True):
+        kind=st.selectbox("Type",["Assignment","Reminder","Event","Exam","Quiz"],index=0,label_visibility="visible")
+        title=st.text_input("Title",placeholder="Final review session")
+        course=st.text_input("Course",placeholder="Statistics")
+        col_a,col_b=st.columns(2)
+        with col_a:
+            due=st.date_input("Date",date(YEAR,1,15),min_value=date(YEAR,1,1),max_value=date(YEAR,12,31))
+            include_time=st.checkbox("Add a time",value=kind in {"Reminder","Event","Exam","Quiz"})
+        with col_b:
+            due_time=st.time_input("Time",time(9,0),disabled=not include_time)
+            priority=st.selectbox("Priority",["High","Medium","Low"],index=1)
+        location=st.text_input("Location",placeholder="Library, room 204, Zoom")
+        description=st.text_area("Description",placeholder="Add any notes, prep steps, or key details.")
+        submit=st.form_submit_button("Save item",type="primary",use_container_width=True)
+        if submit:
+            if not title.strip():
+                st.error("Title is required.")
+            else:
+                course_name=(course.strip() or kind)
+                note_parts=[]
+                if description.strip(): note_parts.append(f"Description: {description.strip()}")
+                if location.strip(): note_parts.append(f"Location: {location.strip()}")
+                save_assignment(DB_FILE,create_assignment(title=title,course=course_name,due_date=due,due_time=due_time if include_time else None,category=kind,priority=priority,notes="\n".join(note_parts)))
+                st.success(f"{kind} saved.")
+                st.session_state.show_create=False
+                st.rerun()
+    st.markdown('</div>',unsafe_allow_html=True)
 with st.sidebar:
     st.header("View settings")
     month=st.selectbox("Month",range(1,13),index=max(0,min(11,today.month-1)),format_func=lambda x:MONTH_NAMES[x])
