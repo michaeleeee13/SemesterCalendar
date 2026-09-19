@@ -20,6 +20,7 @@ st.markdown("""<style>
 
 seed_demo(DB_FILE); items=list_assignments(DB_FILE); today=date.today()
 if "show_create" not in st.session_state: st.session_state.show_create=False
+if "create_date" not in st.session_state: st.session_state.create_date=date(YEAR,1,15)
 st.markdown('<div class="hero"><div class="eyebrow">Your semester at a glance</div><h1>Semester Calendar <span style="color:#5b7cfa">2026</span></h1><p>One clear place for every deadline, exam, reading, and project.</p></div>',unsafe_allow_html=True)
 create_col, helper_col=st.columns([1.2,5])
 with create_col:
@@ -35,7 +36,7 @@ if st.session_state.show_create:
         course=st.text_input("Course",placeholder="Statistics")
         col_a,col_b=st.columns(2)
         with col_a:
-            due=st.date_input("Date",date(YEAR,1,15),min_value=date(YEAR,1,1),max_value=date(YEAR,12,31))
+            due=st.date_input("Date",st.session_state.create_date,min_value=date(YEAR,1,1),max_value=date(YEAR,12,31))
             include_time=st.checkbox("Add a time",value=kind in {"Reminder","Event","Exam","Quiz"})
         with col_b:
             due_time=st.time_input("Time",time(9,0),disabled=not include_time)
@@ -81,7 +82,12 @@ with calendar_tab:
         cols=st.columns(7)
         for c,day in zip(cols,week):
             classes="day"+(" out" if day.month!=month else "")+(" today" if day==today else "")
-            c.markdown(f'<div class="{classes}"><div class="num">{day.day}</div>{"".join(chip(x) for x in by_day.get(day.isoformat(),[]))}</div>',unsafe_allow_html=True)
+            with c:
+                st.markdown(f'<div class="{classes}"><div class="num">{day.day}</div>{"".join(chip(x) for x in by_day.get(day.isoformat(),[]))}</div>',unsafe_allow_html=True)
+                if st.button("＋ Add",key=f"add-{day.isoformat()}",use_container_width=True,help=f"Add an item on {day.strftime('%B %d, %Y')}"):
+                    st.session_state.create_date=day
+                    st.session_state.show_create=True
+                    st.rerun()
 with agenda_tab:
     st.subheader("Upcoming agenda"); agenda=[x for x in filtered if x.due_date>=today.isoformat()]
     if not agenda: st.markdown('<div class="empty">No upcoming work matches your filters.</div>',unsafe_allow_html=True)

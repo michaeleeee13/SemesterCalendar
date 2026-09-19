@@ -12,6 +12,8 @@ An interactive, mobile-ready Python/Streamlit planner built around a 2026 calend
 - Responsive phone agenda plus desktop month grid
 - Search, filtering, sample data, and `.ics` calendar export
 - PDF, DOCX, and TXT syllabus inbox
+- Create items from the Create form or directly from any calendar date
+- Complete, reopen, and delete calendar items from the Assignments manager
 
 ## Run it
 
